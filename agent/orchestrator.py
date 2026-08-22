@@ -44,11 +44,16 @@ def run_agent(transaction_id: str) -> dict:
                         reflection_cycles += 1
                         call_revision_llm(state, trace)
                         continue
-
+                        
                     elif reflection_decision == "NEED_MORE_EVIDENCE":
                         reflection_cycles += 1
+                        if reflection_cycles >= settings.max_reflection_cycles:
+                            # Budget's about to run out right when the Reflector said
+                            # the draft wasn't grounded enough - force one revision
+                            # before shipping it, instead of returning it as-is.
+                            call_revision_llm(state, trace)
                         break  # return control to Planner
-
+                        
                     else:
                         raise ValueError(f"Unknown reflection decision: {reflection_decision}")
 
