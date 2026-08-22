@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Fraud Detection Reflection Agent</title>
+<style>
+  :root {
+    --ink: #12181a;
+    --ink-soft: #4b5a57;
+    --paper: #eef2f0;
+    --card: #ffffff;
+    --line: #d6dede;
+    --accent: #1f6f6a;
+    --accent-soft: #e5f4f0;
+    --risk-high: #b23a32;
+    --risk-high-bg: #f6dedb;
+    --risk-med: #a96a1e;
+    --risk-med-bg: #f3e3c9;
+    --risk-low: #2f7a50;
+    --risk-low-bg: #d9ebdf;
+    --mono: Consolas, "SF Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.5;
+  }
+  header {
+    padding: 2rem 1.5rem 1rem;
+    max-width: 860px;
+    margin: 0 auto;
+  }
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    color: var(--accent);
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  header h1 {
+    font-size: 1.6rem;
+    margin: 0.3rem 0 0.4rem;
+  }
+  header p {
+    color: var(--ink-soft);
+    margin: 0;
+    max-width: 60ch;
+  }
+  main {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem 4rem;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  label {
+    display: block;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  textarea {
+    width: 100%;
+    min-height: 90px;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    resize: vertical;
+    background: var(--paper);
+    color: var(--ink);
+  }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.9rem;
+  }
+  button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.65rem 1.3rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; cursor: default; }
+  button:hover:not(:disabled) { background: #185854; }
+  .status {
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    color: var(--ink-soft);
+  }
+  .status.error { color: var(--risk-high); }
+  h2 {
+    font-size: 1rem;
+    margin: 0 0 0.8rem;
+  }
+  pre.response {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 0.9rem;
+    font-family: var(--mono);
+    font-size: 0.85rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+  }
+  .error-box {
+    background: var(--risk-high-bg);
+    border: 1px solid var(--risk-high);
+    color: var(--risk-high);
+    border-radius: 8px;
+    padding: 0.9rem;
+    font-size: 0.9rem;
+  }
+  .step {
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    margin-bottom: 0.7rem;
+    overflow: hidden;
+  }
+  .step summary {
+    cursor: pointer;
+    padding: 0.7rem 0.9rem;
+    background: var(--accent-soft);
+    font-weight: 600;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    list-style: none;
+  }
+  .step summary::-webkit-details-marker { display: none; }
+  .step summary .idx {
+    font-family: var(--mono);
+    font-weight: 400;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+  }
+  .step-body { padding: 0.9rem; }
+  .step-body h4 {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--ink-soft);
+    margin: 0.8rem 0 0.35rem;
+  }
+  .step-body h4:first-child { margin-top: 0; }
+  .step-body pre {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 0.7rem;
+    font-family: var(--mono);
+    font-size: 0.82rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+    max-height: 260px;
+    overflow-y: auto;
+  }
+  .empty {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    font-style: italic;
+  }
+  footer {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 1.5rem 2rem;
+    color: var(--ink-soft);
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Fraud Detection Reflection Agent</div>
+    <h1>Run the agent</h1>
+    <p>Enter a transaction to investigate. The agent gathers evidence on its own,
+       drafts a risk assessment, and checks its own work before answering.</p>
+  </header>
+
+  <main>
+    <div class="card">
+      <label for="prompt">Prompt</label>
+      <textarea id="prompt" placeholder="e.g. Investigate transaction TXN_10002"></textarea>
+      <div class="row">
+        <button id="run-btn" type="button">Run Agent</button>
+        <span id="status" class="status"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Response</h2>
+      <div id="response-container">
+        <p class="empty">Run the agent to see its final response here.</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Execution trace</h2>
+      <div id="steps-container">
+        <p class="empty">Every LLM call (module, prompt, response) will appear here, in order.</p>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    No login required. Every request goes straight to <code>POST /api/execute</code>.
+  </footer>
+
+  <script>
+    const promptEl = document.getElementById("prompt");
+    const runBtn = document.getElementById("run-btn");
+    const statusEl = document.getElementById("status");
+    const responseContainer = document.getElementById("response-container");
+    const stepsContainer = document.getElementById("steps-container");
+
+    function renderResponse(response) {
+      if (response === null || response === undefined) {
+        responseContainer.innerHTML = '<p class="empty">No response returned.</p>';
+        return;
+      }
+      const text = typeof response === "string" ? response : JSON.stringify(response, null, 2);
+      responseContainer.innerHTML = "";
+      const pre = document.createElement("pre");
+      pre.className = "response";
+      pre.textContent = text;
+      responseContainer.appendChild(pre);
+    }
+
+    function renderError(message) {
+      responseContainer.innerHTML = "";
+      const box = document.createElement("div");
+      box.className = "error-box";
+      box.textContent = message;
+      responseContainer.appendChild(box);
+    }
+
+    function renderSteps(steps) {
+      stepsContainer.innerHTML = "";
+      if (!steps || steps.length === 0) {
+        stepsContainer.innerHTML = '<p class="empty">No steps returned.</p>';
+        return;
+      }
+      steps.forEach((step, i) => {
+        const details = document.createElement("details");
+        details.className = "step";
+
+        const summary = document.createElement("summary");
+        summary.innerHTML = `<span class="idx">STEP ${i + 1}</span> ${escapeHtml(step.module || "unknown")}`;
+        details.appendChild(summary);
+
+        const body = document.createElement("div");
+        body.className = "step-body";
+
+        const systemPrompt = step.prompt && (step.prompt.system_prompt ?? step.prompt.System_prompt) || "";
+        const userPrompt = step.prompt && (step.prompt.user_prompt ?? step.prompt.User_prompt) || "";
+        const response = step.response !== undefined ? step.response : "";
+
+        body.appendChild(labeledPre("System prompt", systemPrompt));
+        body.appendChild(labeledPre("User prompt", userPrompt));
+        body.appendChild(labeledPre("Response", typeof response === "string" ? response : JSON.stringify(response, null, 2)));
+
+        details.appendChild(body);
+        stepsContainer.appendChild(details);
+      });
+    }
+
+    function labeledPre(label, text) {
+      const wrap = document.createDocumentFragment();
+      const h4 = document.createElement("h4");
+      h4.textContent = label;
+      const pre = document.createElement("pre");
+      pre.textContent = text;
+      wrap.appendChild(h4);
+      wrap.appendChild(pre);
+      return wrap;
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    async function runAgent() {
+      const prompt = promptEl.value.trim();
+      if (!prompt) {
+        statusEl.textContent = "Enter a prompt first.";
+        statusEl.classList.add("error");
+        return;
+      }
+
+      runBtn.disabled = true;
+      statusEl.classList.remove("error");
+      statusEl.textContent = "Running...";
+      responseContainer.innerHTML = '<p class="empty">Waiting for the agent...</p>';
+      stepsContainer.innerHTML = "";
+
+      try {
+        const res = await fetch("/api/execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+
+        const data = await res.json();
+
+        if (data.status === "ok") {
+          statusEl.textContent = `Done - ${(data.steps || []).length} step(s).`;
+          renderResponse(data.response);
+        } else {
+          statusEl.textContent = "Error";
+          statusEl.classList.add("error");
+          renderError(data.error || "Unknown error.");
+        }
+        renderSteps(data.steps);
+      } catch (err) {
+        statusEl.textContent = "Request failed";
+        statusEl.classList.add("error");
+        renderError(String(err));
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    runBtn.addEventListener("click", runAgent);
+    promptEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) runAgent();
+    });
+  </script>
+</body>
+</html>

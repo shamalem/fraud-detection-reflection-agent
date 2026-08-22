@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.env
+.venv/
+venv/
+
+# Licensed source material for the RAG index (Mastercard/ECB PDFs) and the Supabase
+# dataset export if kept locally - never commit these.
+data/raw/
+
+.DS_Store

@@ -1,0 +1,18 @@
+[project]
+name = "fraud-detection-reflection-agent"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "openai>=1.30.0",
+    "supabase>=2.5.0",
+    "pinecone>=5.0.0",
+    "pypdf>=4.2.0",
+    "tiktoken>=0.7.0",
+    "python-dotenv>=1.0.0",
+    "flask>=3.0.0",
+]
+
+# No [tool.vercel] entrypoint declaration: with a single api/index.py exporting
+# `app`, Vercel's standard zero-config Python detection finds it on its own.
+# Declaring an explicit entrypoint puts the project into "backend framework"
+# mode instead, which changes how rewrites are applied and broke routing to /.
