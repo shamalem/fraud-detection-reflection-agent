@@ -122,6 +122,29 @@ python cli.py --transaction-id TXN_10002 --show-trace
 Prints the final structured assessment plus, with `--show-trace`, every LLM step
 (module, system prompt, user prompt, response) in the order they ran.
 
+## Example Test Prompts
+
+**1. Reflection loop catches and corrects overclaims**
+```
+Investigate TXN_27094 for potential fraud and give me a clear verdict — is this safe to approve, or does something here warrant a hold?
+```
+The first draft overclaimed twice (treating a general ECB statistic as transaction-specific proof, and treating sparse history as a risk factor instead of an uncertainty). The Reflector caught both, sent it back for revision twice, and the agent converged on `risk_level: "low"` with `confidence: 0.38` — a real, earned verdict, not a default "medium."
+
+**2. Explicit dataset signals correctly drive risk up**
+```
+Analyze TXN_16957 for fraud risk and explain what action should be taken.
+```
+This transaction has both `IP_Address_Flag = 1` and `Previous_Fraudulent_Activity = 1` — the only two fields the grounding rules allow to be read as fraud signals directly. The agent correctly elevates risk on that basis, while the Reflector strips out an unsupported claim about geographic distance from the draft, landing on `risk_level: "medium"` with a proportional "manual review" recommendation.
+
+**3. Nonexistent transaction ID**
+```
+Investigate transaction TXN_00000000.
+```
+Returns the spec-required error shape immediately, with no fabricated assessment:
+```json
+{ "status": "error", "error": "No transaction found with ID 'TXN_00000000'.", "response": null, "steps": [] }
+```
+
 ## Configuration
 
 All settings are env vars, see `.env.example`:
