@@ -79,7 +79,7 @@ _FULL_RESPONSE = {
 
 
 def _step(module, system_prompt, user_prompt, response):
-    return {"module": module, "prompt": {"system_prompt": system_prompt, "user_prompt": user_prompt}, "response": response}
+    return {"module": module, "prompt": {"System_prompt": system_prompt, "User_prompt": user_prompt}, "response": response}
 
 
 PROMPT_EXAMPLES = [
