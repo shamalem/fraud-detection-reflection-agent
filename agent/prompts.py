@@ -36,6 +36,7 @@ Grounding rules:
 - Explicit dataset flags such as IP_Address_Flag may be used as signals because they are already encoded indicators in the dataset.
 - Missing user history is uncertainty, not evidence of fraud.
 - When creating a fraud-knowledge search query, describe the observed facts neutrally. Do not embed unsupported conclusions into the query.
+- When calling get_user_summary or get_recent_user_transactions, copy the target_transaction's Timestamp field EXACTLY as given - do not reformat, retype, add/remove timezone markers, or change precision.
 
 Return only structured JSON:
 {
