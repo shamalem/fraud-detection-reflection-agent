@@ -7,7 +7,7 @@ Output: {"status", "error", "response", "steps"} - exactly the shape run_agent()
 """
 import re
 
-TRANSACTION_ID_PATTERN = re.compile(r"\bTXN_[A-Za-z0-9]+\b", re.IGNORECASE)
+TRANSACTION_ID_PATTERN = re.compile(r"TXN_[0-9]+", re.IGNORECASE)
 
 
 def _error(message: str) -> dict:
