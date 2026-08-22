@@ -2,6 +2,8 @@
 
 Returns exactly {status, error, response, steps} - the shape required by POST /api/execute.
 """
+import time
+
 from agent.planner import call_planner_llm
 from agent.reflector import call_reflector_llm
 from agent.risk_assessor import call_revision_llm, call_risk_assessor_llm
@@ -17,9 +19,33 @@ def run_agent(transaction_id: str) -> dict:
 
     planner_iterations = 0
     reflection_cycles = 0
+    reflection_decision = None
+    start_time = time.monotonic()
+
+    def _time_budget_exceeded() -> bool:
+        return time.monotonic() - start_time >= settings.max_wall_clock_seconds
+
+    def _time_budget_response() -> dict:
+        # maxDuration only raises the ceiling Vercel allows; it does not stop Vercel
+        # from killing the request with no response at all once that ceiling is hit.
+        # This returns whatever we have with time to spare, so the client still gets
+        # a clean {status, response, steps} instead of a raw platform timeout.
+        if state["draft_assessment"] is not None:
+            state["draft_assessment"]["review_status"] = "unreviewed_time_budget_exceeded"
+            state["final_answer"] = state["draft_assessment"]
+            return {"status": "ok", "error": None, "response": state["final_answer"], "steps": trace}
+        return {
+            "status": "error",
+            "error": "Agent exceeded its time budget before producing an assessment.",
+            "response": None,
+            "steps": trace,
+        }
 
     try:
         while planner_iterations < settings.max_planner_iterations:
+            if _time_budget_exceeded():
+                return _time_budget_response()
+
             state["iteration"] = planner_iterations + 1
 
             # 1. PLANNER
@@ -33,10 +59,14 @@ def run_agent(transaction_id: str) -> dict:
 
                 # 3. REFLECTION LOOP
                 while reflection_cycles < settings.max_reflection_cycles:
+                    if _time_budget_exceeded():
+                        return _time_budget_response()
+
                     reflection = call_reflector_llm(state, trace)
                     reflection_decision = reflection.get("decision")
 
                     if reflection_decision == "APPROVE":
+                        state["draft_assessment"]["review_status"] = "approved"
                         state["final_answer"] = state["draft_assessment"]
                         return {"status": "ok", "error": None, "response": state["final_answer"], "steps": trace}
 
@@ -44,7 +74,7 @@ def run_agent(transaction_id: str) -> dict:
                         reflection_cycles += 1
                         call_revision_llm(state, trace)
                         continue
-                        
+
                     elif reflection_decision == "NEED_MORE_EVIDENCE":
                         reflection_cycles += 1
                         if reflection_cycles >= settings.max_reflection_cycles:
@@ -53,12 +83,21 @@ def run_agent(transaction_id: str) -> dict:
                             # before shipping it, instead of returning it as-is.
                             call_revision_llm(state, trace)
                         break  # return control to Planner
-                        
+
                     else:
                         raise ValueError(f"Unknown reflection decision: {reflection_decision}")
 
-                # Reflection limit reached - ship the latest revised assessment
+                # Reflection limit reached - ship the latest revised assessment, but be
+                # honest that it was never a fully-reviewed APPROVE. A cap hit right after
+                # NEED_MORE_EVIDENCE is worse than one hit after REVISE: the Reflector didn't
+                # just find flaws to fix, it said there wasn't enough evidence to judge at all -
+                # even with one forced revision attempt above, no Reflector ever re-checked it.
                 if reflection_cycles >= settings.max_reflection_cycles:
+                    state["draft_assessment"]["review_status"] = (
+                        "unreviewed_insufficient_evidence"
+                        if reflection_decision == "NEED_MORE_EVIDENCE"
+                        else "unreviewed_revision_limit_reached"
+                    )
                     state["final_answer"] = state["draft_assessment"]
                     return {"status": "ok", "error": None, "response": state["final_answer"], "steps": trace}
 
@@ -91,6 +130,7 @@ def run_agent(transaction_id: str) -> dict:
 
         # 5. PLANNER SAFETY LIMIT
         if state["draft_assessment"] is not None:
+            state["draft_assessment"]["review_status"] = "unreviewed_planner_iteration_limit_reached"
             state["final_answer"] = state["draft_assessment"]
             return {"status": "ok", "error": None, "response": state["final_answer"], "steps": trace}
 

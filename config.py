@@ -31,5 +31,10 @@ class Settings:
     max_planner_iterations: int = int(os.getenv("MAX_PLANNER_ITERATIONS", "6"))
     max_reflection_cycles: int = int(os.getenv("MAX_REFLECTION_CYCLES", "3"))
 
+    # Wall-clock safety margin: Vercel kills the request at maxDuration (300s) with
+    # no response at all. This stops the loop with time to spare so the agent can
+    # still return a clean {status, response, steps} instead of a raw platform timeout.
+    max_wall_clock_seconds: int = int(os.getenv("MAX_WALL_CLOCK_SECONDS", "240"))
+
 
 settings = Settings()
